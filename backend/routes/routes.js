@@ -5,18 +5,28 @@ const ToDo = require('../models/toDo');
 // GET all to-dos with dynamic sorting and filtering
 router.get('/toDo', async (req, res) => {
     try {
-        const { sortBy = 'createdAt', sortOrder = 'asc', ...filters } = req.query;
+        const { sortBy = 'createdAt', sortOrder = 'asc', startDate, endDate, ...filters } = req.query;
 
         // Construct the sort object dynamically
         const sortOptions = {};
         sortOptions[sortBy] = sortOrder === 'asc' ? 1 : -1;
 
+        // Construct the filter object dynamically
+        const filterOptions = { ...filters };
+
+        if (startDate && endDate) {
+            filterOptions.date = {
+                $gte: new Date(startDate),
+                $lte: new Date(endDate),
+            };
+        }
+
         // Find with dynamic filters and sort
-        const toDos = await ToDo.find(filters).sort(sortOptions);
+        const toDos = await ToDo.find(filterOptions).sort(sortOptions);
         res.status(200).json(toDos);
     } catch (error) {
         console.log(error.message);
-        res.status(500).json({message: error.message});
+        res.status(500).json({ message: error.message });
     }
 });
 
